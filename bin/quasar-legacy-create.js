@@ -32,7 +32,7 @@ if (argv.help || !rawName || !template) {
        npm init quasar
 
   Usage
-    $ quasar create <project-name> <kit-name> [--branch <version-name>]
+    $ quasar-legacy-create <project-name> <kit-name> [--branch <version-name>]
 
   App Examples with custom starter kits
     $ quasar create my-project user/github-starter-kit
