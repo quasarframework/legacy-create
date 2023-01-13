@@ -15,39 +15,40 @@ const argv = parseArgs(process.argv.slice(2), {
 })
 
 const rawName = argv._[0]
-const template = argv._[1]
+let template = argv._[1]
 
 if (argv.help || !rawName || !template) {
+  console.log(`
+Description
+  -- LEGACY --
+  Creates a Quasar project (app, AppExtension or UI kit) from CUSTOM starter kits.
+  For scaffolding an official Quasar project please use this instead:
+      yarn create quasar
+      or
+      npm init quasar
+
+Usage
+  $ quasar-legacy-create <project-name> <kit-name> [--branch <version-name>]
+
+App Examples with custom starter kits
+  $ quasar create my-project user/github-starter-kit
+    # installs an App project with a custom starter kit from GitHub
+  $ quasar create my-project user/github-starter-kit ./starter-kit-folder
+    # installs an App project using a starter kit located at ./starter-kit-folder
+  $ quasar create my-project user/github-starter-kit --branch v0.17
+    # installs an App project from a specific branch
+
+Options
+  --branch, -b   Use specific branch of the starter kit
+  --clone, -c    Use git clone
+  --offline, -o  Use a cached starter kit
+  --help, -h     Displays this message
+  `)
+
   if (!rawName || !template) {
-    console.error(' Missing parameters. Please provide a project name and a starter kit name\n\n')
+    console.error('\nError:\n  Missing parameters. Please provide a project name and a starter kit name\n')
   }
 
-  console.log(`
-  Description
-    -- LEGACY --
-    Creates a Quasar project (app, AppExtension or UI kit) from CUSTOM starter kits.
-    For scaffolding an official Quasar project please use this instead:
-       yarn create quasar
-       or
-       npm init quasar
-
-  Usage
-    $ quasar-legacy-create <project-name> <kit-name> [--branch <version-name>]
-
-  App Examples with custom starter kits
-    $ quasar create my-project user/github-starter-kit
-      # installs an App project with a custom starter kit from GitHub
-    $ quasar create my-project user/github-starter-kit ./starter-kit-folder
-      # installs an App project using a starter kit located at ./starter-kit-folder
-    $ quasar create my-project user/github-starter-kit --branch v0.17
-      # installs an App project from a specific branch
-
-  Options
-    --branch, -b   Use specific branch of the starter kit
-    --clone, -c    Use git clone
-    --offline, -o  Use a cached starter kit
-    --help, -h     Displays this message
-  `)
   process.exit(0)
 }
 
@@ -81,7 +82,7 @@ const name = inPlace ? path.relative('../', process.cwd()) : rawName
 const to = path.resolve(rawName || '.')
 
 if (isLocalPath(template) !== true) {
-  template += '#' + (argv.branch || 'master')
+  template += '#' + (argv.branch || 'main')
 }
 
 const tmp = path.join(home, '.quasar-legacy-starter-kits', template.replace(/[\/:]/g, '-'))
@@ -134,7 +135,7 @@ function run () {
 }
 
 function downloadAndGenerate (template) {
-  const spinner = ora(' Downloading Quasar starter kit')
+  const spinner = ora(' Downloading custom starter kit')
   spinner.start()
 
   // Remove if local template exists
@@ -146,6 +147,13 @@ function downloadAndGenerate (template) {
     spinner.stop()
 
     if (err) {
+      if (!argv.branch && template.endsWith('#main')) {
+        logger.log('Failed to download repo ' + template + ': ' + err.message.trim())
+        logger.log('Trying with "master" branch...')
+        downloadAndGenerate(template.replace('#main', '#master'))
+        return
+      }
+
       logger.fatal('Failed to download repo ' + template + ': ' + err.message.trim())
     }
 
