@@ -6,7 +6,6 @@ const { yellow } = require('kolorist')
 const argv = parseArgs(process.argv.slice(2), {
   alias: {
     b: 'branch',
-    k: 'kit',
     c: 'clone',
     o: 'offline',
     h: 'help'
@@ -15,9 +14,17 @@ const argv = parseArgs(process.argv.slice(2), {
   string: ['k', 'b']
 })
 
-if (argv.help) {
+const rawName = argv._[0]
+const template = argv._[1]
+
+if (argv.help || !rawName || !template) {
+  if (!rawName || !template) {
+    console.error(' Missing parameters. Please provide a project name and a starter kit name\n\n')
+  }
+
   console.log(`
   Description
+    -- LEGACY --
     Creates a Quasar project (app, AppExtension or UI kit) from CUSTOM starter kits.
     For scaffolding an official Quasar project please use this instead:
        yarn create quasar
@@ -25,24 +32,17 @@ if (argv.help) {
        npm init quasar
 
   Usage
-    $ quasar create <project-name> [--kit <kit-name>] [--branch <version-name>]
+    $ quasar create <project-name> <kit-name> [--branch <version-name>]
 
   App Examples with custom starter kits
-    $ quasar create my-project --kit user/github-starter-kit
+    $ quasar create my-project user/github-starter-kit
       # installs an App project with a custom starter kit from GitHub
-    $ quasar create my-project --kit ./starter-kit-folder
+    $ quasar create my-project user/github-starter-kit ./starter-kit-folder
       # installs an App project using a starter kit located at ./starter-kit-folder
-    $ quasar create my-project --branch v0.17
-      # installs an App project from a specific older version (only major version)
-
-  App Extension Examples with custom starter kits
-    $ quasar create my-extension-project --kit user/github-extension-starter-kit
-      # installs an App Extension project with a custom starter kit from GitHub
-    $ quasar create my-extension-project --kit user/github-extension-starter-kit --branch dev
-      # installs an App Extension project with a custom starter kit from GitHub using the dev branch
+    $ quasar create my-project user/github-starter-kit --branch v0.17
+      # installs an App project from a specific branch
 
   Options
-    --kit, -k      Use specific starter kit
     --branch, -b   Use specific branch of the starter kit
     --clone, -c    Use git clone
     --offline, -o  Use a cached starter kit
@@ -61,20 +61,6 @@ console.log(
   )
 )
 
-if (!argv.kit && (!argv.branch || argv.branch === 'v1')) {
-  console.log(` This command is now reserved only for scaffolding
- with CUSTOM starter kits or legacy v0.x projects.
-
- For scaffolding an official Quasar project please use this instead:
-
-   yarn create quasar
-   # or
-   npm init quasar
-  `)
-
-  process.exit(0)
-}
-
 // Following is adapted from Vue CLI v2 "init" command
 
 const download = require('download-git-repo')
@@ -90,15 +76,6 @@ const generate = require('../lib/generate')
 const logger = require('../lib/logger')
 const { isLocalPath, getTemplatePath } = require('../lib/local-path')
 
-let template = argv.kit
-  ? (
-    argv.kit.indexOf('/') > -1
-      ? argv.kit
-      : 'quasarframework/quasar-starter-kit-' + argv.kit
-  )
-  : 'quasarframework/quasar-starter-kit'
-
-const rawName = argv._[0]
 const inPlace = !rawName || rawName === '.'
 const name = inPlace ? path.relative('../', process.cwd()) : rawName
 const to = path.resolve(rawName || '.')
@@ -107,7 +84,7 @@ if (isLocalPath(template) !== true) {
   template += '#' + (argv.branch || 'master')
 }
 
-const tmp = path.join(home, '.quasar-starter-kits', template.replace(/[\/:]/g, '-'))
+const tmp = path.join(home, '.quasar-legacy-starter-kits', template.replace(/[\/:]/g, '-'))
 
 if (argv.offline) {
   console.log(`> Use cached template at ${yellow(tildify(tmp))}`)
